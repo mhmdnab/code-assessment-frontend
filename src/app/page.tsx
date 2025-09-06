@@ -26,7 +26,9 @@ export default function Home() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("http://localhost:5001/products");
+        const res = await fetch(
+          "https://code-assessment-backend.onrender.com/products"
+        );
         const data: Product[] = await res.json();
         setProducts(data);
       } catch (err) {
