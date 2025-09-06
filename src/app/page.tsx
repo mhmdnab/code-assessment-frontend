@@ -1,8 +1,8 @@
-// app/page.tsx (Next.js 13+ / app router)
 "use client";
 
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
+import { fetchProducts } from "../utils/api";
 
 interface Variant {
   id: number;
@@ -22,26 +22,49 @@ interface Product {
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function getProducts() {
       try {
-        const res = await fetch(
-          "https://code-assessment-backend.onrender.com/products"
-        );
-        const data: Product[] = await res.json();
-        setProducts(data);
+        const data = await fetchProducts();
+        // We now explicitly check if the data is an array before setting the state.
+        if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          // If the data is not an array, it's an unexpected format from the API.
+          console.error("API returned data in an unexpected format:", data);
+          setError("Failed to load products due to a data format error.");
+        }
       } catch (err) {
         console.error("Failed to fetch products:", err);
+        setError(
+          "Failed to fetch products. Please check the network connection and server."
+        );
       } finally {
         setLoading(false);
       }
     }
-
-    fetchProducts();
+    getProducts();
   }, []);
 
-  if (loading) return <p className="p-6 text-center">Loading products...</p>;
+  if (loading) {
+    return <p className="p-6 text-center text-gray-500">Loading products...</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        <p>Error: {error}</p>
+        <p>Please check the console for more details.</p>
+      </div>
+    );
+  }
+
+  // If there are no products, display a message.
+  if (products.length === 0) {
+    return <p className="p-6 text-center text-gray-500">No products found.</p>;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
@@ -52,7 +75,7 @@ export default function Home() {
           name={product.name}
           price={product.price}
           category={product.category}
-          variants={product.variants || []} // fallback to empty array
+          variants={product.variants || []}
           inStock={product.inStock}
         />
       ))}
